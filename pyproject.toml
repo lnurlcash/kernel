@@ -56,10 +56,3 @@ test-command = "pytest {project}/tests -q -o pythonpath={project}/tests"
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
 archs = ["x86_64", "aarch64"]
-
-[tool.cibuildwheel.macos]
-archs = ["arm64", "x86_64"]
-before-all = "scripts/fetch_boost_headers.sh /tmp/boost-deps"
-# std::filesystem (used throughout Core) needs macOS >= 10.15; cibuildwheel defaults
-# to 10.9/11.0. Core itself requires 13.0.
-environment = { CMAKE_ARGS = "-DBoost_DIR=/tmp/boost-deps/boost-shim", MACOSX_DEPLOYMENT_TARGET = "13.0" }

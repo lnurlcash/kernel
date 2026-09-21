@@ -43,7 +43,6 @@ STATUS_OK = 0
 
 _LIB_NAMES = {
     "linux": "libbitcoinkernel.so",
-    "darwin": "libbitcoinkernel.dylib",
     "win32": "bitcoinkernel.dll",
 }
 
