@@ -1,0 +1,21 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y libboost-dev ninja-build
+      - run: pip install cmake ninja scikit-build-core pytest
+      - name: Build and install (the package under test is the built wheel, not the source tree)
+        run: pip install .
+      - run: pytest tests -q

@@ -1,0 +1,46 @@
+[build-system]
+requires = ["scikit-build-core>=0.10"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "lnurlcashkernel"
+version = "0.1.0"
+description = "Verify LUD-25 ct1 (taproot script-path) spends with Bitcoin Core's own script interpreter, unmodified."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = []  # deliberately none: a verification library keeps its own dependency surface at zero
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+wheel.packages = ["src/lnurlcashkernel"]
+wheel.py-api = "py3"          # pure-ctypes: one wheel per platform, not per Python
+cmake.build-type = "Release"
+build-dir = "build/skbuild"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+
+[tool.cibuildwheel]
+# Wheels are built in manylinux containers (old glibc/libstdc++) so they run on
+# real servers. A wheel built on a developer machine is NOT releasable: the
+# one built during development needed manylinux_2_39, far too new.
+build = "cp312-*"          # py3-none wheel: one interpreter build is enough
+skip = "*-musllinux_*"
+test-requires = "pytest"
+# Core needs a C++20 compiler and Boost headers; both come from the image
+before-all = "yum install -y boost-devel || dnf install -y boost-devel"
+test-command = "pytest {project}/tests -q"
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+archs = ["x86_64", "aarch64"]
+
+[tool.cibuildwheel.macos]
+archs = ["arm64", "x86_64"]
+before-all = "brew install boost cmake ninja"

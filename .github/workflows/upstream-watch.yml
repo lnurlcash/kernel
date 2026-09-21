@@ -1,0 +1,41 @@
+name: upstream-watch
+# Bitcoin Core occasionally ships fixes to script verification. This opens a PR
+# moving the pin when Core tags a new release, so a fix is never missed for lack
+# of anyone noticing - CI on that PR is the gate, not this job.
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Find the newest stable Core release
+        id: latest
+        run: |
+          latest=$(git ls-remote --tags https://github.com/bitcoin/bitcoin 'v*' \
+            | grep -v '\^{}' | grep -v rc | awk '{print $2}' | sed 's|refs/tags/||' \
+            | sort -V | tail -1)
+          current=$(python3 -c "import re;print(re.search(r'UPSTREAM_TAG = \"(.+?)\"', open('src/lnurlcashkernel/_upstream.py').read()).group(1))")
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+      - name: Bump the pin
+        if: steps.latest.outputs.latest != steps.latest.outputs.current
+        run: python3 scripts/bump_upstream.py "${{ steps.latest.outputs.latest }}"
+      - uses: peter-evans/create-pull-request@v6
+        if: steps.latest.outputs.latest != steps.latest.outputs.current
+        with:
+          branch: bump-core-${{ steps.latest.outputs.latest }}
+          title: "bump vendored Bitcoin Core to ${{ steps.latest.outputs.latest }}"
+          body: |
+            Moves `vendor/bitcoin` and `_upstream.py` to Core ${{ steps.latest.outputs.latest }}.
+
+            **Read Core's release notes for script/consensus changes before merging.**
+            CI is the gate; a security-relevant release should be expedited.

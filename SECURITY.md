@@ -1,0 +1,40 @@
+# Security
+
+## Reporting
+
+Report vulnerabilities privately to the maintainers rather than a public issue.
+
+## Threat model
+
+**In scope - what this library is responsible for**
+
+- Rejecting a script-path spend whose leaf/control block don't commit to `Q`.
+- Rejecting a spend whose script conditions (signature, preimage, multisig,
+  timelock comparison) aren't satisfied - *as decided by Bitcoin Core*.
+- Refusing leaf shapes and timelock kinds outside the supported set, before Core
+  is called.
+- Never crashing on attacker-supplied proof data: malformed input is a rejection.
+- Never reading the system clock.
+
+**Out of scope - explicitly NOT guaranteed**
+
+- **Time.** A timelock "verified" here means the *mint asserts its own clock*.
+  This is a custodial policy assertion, not a consensus guarantee; nothing stops a
+  mint lying about the time and nobody can independently re-check it.
+- The mint's storage, authentication, replay handling, or fee policy.
+- Anything in Bitcoin Core itself. Its script verification is trusted as-is.
+
+## Upstream risk
+
+- Verification correctness is Bitcoin Core's. Core has fixed script/consensus
+  bugs before; this package is only as current as its pinned tag. Run
+  `upstream_version()` at startup and log it.
+- Core describes `libbitcoinkernel` as **experimental**. Its C API may change
+  between releases; a bump can require binding changes (the tests would fail).
+- Keep the `upstream-watch` workflow enabled, and expedite security releases.
+
+## Supply chain
+
+- `vendor/bitcoin` is a pinned submodule, never patched (see UPSTREAM.md).
+- **Zero runtime Python dependencies** by design.
+- Releases use PyPI trusted publishing (OIDC) with provenance attestations.
