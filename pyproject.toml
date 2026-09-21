@@ -55,4 +55,6 @@ test-command = "pytest {project}/tests -q -o pythonpath={project}/tests"
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux_2_28"
 manylinux-aarch64-image = "manylinux_2_28"
-archs = ["x86_64", "aarch64"]
+# each runner builds its own arch (ubuntu-latest = x86_64, ubuntu-24.04-arm = aarch64);
+# listing both would make one runner try to emulate the other without QEMU
+archs = ["native"]
