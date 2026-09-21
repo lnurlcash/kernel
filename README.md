@@ -129,7 +129,7 @@ Core's sources. Only the final `publish` job holds `id-token: write`.
 ### One-time PyPI setup
 
 Trusted publishing must be registered on PyPI before the first tag - it cannot be
-done from this repo. On pypi.org, add a *pending publisher* for `lnurlcashkernel`
+done from this repo. On pypi.org, add a *pending publisher* for `lnurlcash-kernel`
 with the GitHub owner/repo, workflow **`release.yml`**, and **no environment**
 (the workflow does not use one, exactly like electrum-client's).
 

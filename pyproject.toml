@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=0.10", "setuptools-scm>=8"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "lnurlcashkernel"
+name = "lnurlcash-kernel"
 dynamic = ["version"]
 description = "Verify LUD-25 ct1 (taproot script-path) spends with Bitcoin Core's own script interpreter, unmodified."
 readme = "README.md"
