@@ -97,25 +97,56 @@ pip install .            # builds Core's kernel library (~3 min cold) into the w
 pytest
 ```
 
-Core's CMake requires Boost **headers** (≥ 1.74) unconditionally. Install your
-distro's `libboost-dev`, or pass `-Ccmake.define.Boost_DIR=<dir with BoostConfig.cmake>`.
+Core's CMake requires Boost **headers** (≥ 1.74) unconditionally. The distro's may
+be too old (manylinux_2_28 ships 1.66), so fetch a known version:
+
+```sh
+scripts/fetch_boost_headers.sh            # -> build/deps/boost-shim
+pip install . -Ccmake.define.Boost_DIR=$PWD/build/deps/boost-shim
+```
 
 Tests include Core's **own** BIP341 vectors driven through the binding, and real
 script-path spends built from scratch and judged by Core.
 
 ## Releases
 
-Tagging `vX.Y.Z` builds wheels with `cibuildwheel` in manylinux containers and
-publishes to PyPI via trusted publishing (no long-lived token), with build
-provenance attestations. A wheel built on a developer machine is **not**
-releasable: the one built during development needed `manylinux_2_39`, far too new
-for real servers.
+Publishing follows [lnbits/electrum-client](https://github.com/lnbits/electrum-client)'s
+flow: pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which uploads to
+PyPI with `uv publish` over **OIDC trusted publishing** (no API token is stored
+anywhere) and then creates a GitHub release.
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+It differs from electrum-client in one way: that package is pure Python, this one
+ships Bitcoin Core's native library. So wheels are built per platform with
+`cibuildwheel` in manylinux containers (a wheel built on a developer machine is
+tagged `linux_x86_64`, which PyPI rejects - the one built during development
+needed `manylinux_2_39`, far too new for real servers), plus an sdist that bundles
+Core's sources. Only the final `publish` job holds `id-token: write`.
+
+### One-time PyPI setup
+
+Trusted publishing must be registered on PyPI before the first tag - it cannot be
+done from this repo. On pypi.org, add a *pending publisher* for `lnurlcashkernel`
+with the GitHub owner/repo, workflow **`release.yml`**, and **no environment**
+(the workflow does not use one, exactly like electrum-client's).
 
 > The GitHub Actions workflows in `.github/` are written but **have not been run**
-> - they need a real runner. Treat the first tag as the test.
+> - they need a real runner. Treat the first tag as the test. What *was* verified
+> locally: the version-from-tag behaviour, the dev-build guard, the Boost fetch
+> script, and a full wheel + sdist build.
 
 ## Versioning
 
-PyPI rejects PEP 440 local versions (`0.1.0+core31.1`), so the Core release is
-**not** in the version string. It is exposed by `upstream_version()`, recorded in
-each release's notes, and enforced against the submodule pin by a test.
+The version comes from the git tag (`vX.Y.Z` -> `X.Y.Z`) via `setuptools-scm`, as
+electrum-client does with `hatch-vcs`. PyPI rejects PEP 440 local versions, so
+none is ever emitted (`local_scheme = "no-local-version"`); an untagged build gets
+a `.devN` version, and the `publish` job **refuses to upload** any `0.0.0`/`.dev`
+artifact, so a build that could not see its tag can never reach PyPI.
+
+The bundled Bitcoin Core release is deliberately **not** in the version string
+(`0.1.0+core31.1` would be a local version, which PyPI rejects). It is exposed by
+`upstream_version()`, stated in each GitHub release's notes, and enforced against
+the submodule pin by a test.

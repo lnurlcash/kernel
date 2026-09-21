@@ -38,5 +38,7 @@ merging**; a security-relevant release should be expedited, not batched.
 - C++20 compiler, CMake ≥ 3.22, Ninja
 - **Boost headers ≥ 1.74.** Core's CMake requires them unconditionally even for a
   kernel-only build (its own `AddBoostIfNeeded.cmake` carries a TODO admitting
-  the check isn't scoped per target). Header-only: nothing is linked.
+  the check isn't scoped per target). Header-only: nothing is linked. Distro
+  packages can be too old (manylinux_2_28 = 1.66), so `scripts/fetch_boost_headers.sh`
+  fetches a pinned version; CI and releases both use it.
 - Runtime: only libstdc++ / libm / libgcc / libc. No Boost, libevent or OpenSSL.
