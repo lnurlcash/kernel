@@ -21,7 +21,7 @@ DEST="$(cd "$DEST" && pwd)"
 
 if [ ! -f "$DEST/boost_${UNDERSCORED}/boost/version.hpp" ]; then
   echo "fetching Boost ${BOOST_VERSION} headers" >&2
-  curl -fsSL --retry 3 "$URL" | tar -xz -C "$DEST" --wildcards "boost_${UNDERSCORED}/boost/*"
+  curl -fsSL --retry 3 "$URL" | tar -xz -C "$DEST" "boost_${UNDERSCORED}/boost"
 fi
 
 SHIM="$DEST/boost-shim"
