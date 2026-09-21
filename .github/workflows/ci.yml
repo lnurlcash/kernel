@@ -10,12 +10,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: sudo apt-get update && sudo apt-get install -y libboost-dev ninja-build
-      - run: pip install cmake ninja scikit-build-core pytest
+      - name: Fetch Boost headers (same script and version the release build uses)
+        run: scripts/fetch_boost_headers.sh "$RUNNER_TEMP/boost"
+      - run: pip install cmake ninja scikit-build-core setuptools-scm pytest
       - name: Build and install (the package under test is the built wheel, not the source tree)
-        run: pip install .
-      - run: pytest tests -q
+        run: pip install . -Ccmake.define.Boost_DIR="$RUNNER_TEMP/boost/boost-shim"
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: "0.0.0"  # no tags needed to test
+      - name: Test the INSTALLED package
+        # `-o pythonpath=tests` drops the project's default `src` entry, which
+        # would otherwise shadow the installed wheel with a source tree that has
+        # no built library
+        run: pytest tests -q -o pythonpath=tests

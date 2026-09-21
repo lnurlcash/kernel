@@ -1,8 +1,18 @@
 name: release
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
+# Same shape as lnbits/electrum-client's release: a tag builds, `uv publish`
+# exchanges GitHub's OIDC token for a PyPI upload (trusted publishing - no API
+# token is stored anywhere), then a GitHub release is created.
+#
+# The one difference: electrum-client is pure Python, so one `uv build` on one
+# runner is enough. This package ships Bitcoin Core's native library, so the
+# wheels are built per platform in manylinux containers (a wheel built on a
+# plain runner is tagged linux_x86_64, which PyPI rejects) and only the final
+# `publish` job - the only one with `id-token: write` - uploads anything.
 jobs:
   wheels:
     strategy:
@@ -12,8 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
-      - uses: pypa/cibuildwheel@v2.21
+          fetch-depth: 0 # full history + tags, needed for setuptools-scm versioning
+          submodules: recursive # vendor/bitcoin is the code being packaged
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21
       - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
@@ -24,8 +36,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
-      - run: pipx run build --sdist
+          fetch-depth: 0
+          submodules: recursive # the sdist bundles vendor/bitcoin's sources
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Build the sdist
+        run: uv build --sdist
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
@@ -34,17 +54,34 @@ jobs:
   publish:
     needs: [wheels, sdist]
     runs-on: ubuntu-latest
-    environment: pypi
     permissions:
-      id-token: write       # PyPI trusted publishing (OIDC) - no long-lived token
-      attestations: write   # build provenance
-      contents: read
+      id-token: write # required for PyPI trusted publishing (OIDC)
+      contents: write # required for `gh release create`
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
-      - uses: actions/attest-build-provenance@v1
-        with:
-          subject-path: dist/*
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Refuse to publish a development build
+        # setuptools-scm falls back to 0.0.0 / a .devN version if the tag was
+        # not visible to the build - never let that reach PyPI
+        run: |
+          ls -l dist
+          if ls dist | grep -E -- '-0\.0\.0|\.dev[0-9]'; then
+            echo "::error::a dev/fallback version was built; is the tag fetched?"
+            exit 1
+          fi
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Publish to pypi
+        run: uv publish
+      - name: Create github release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref_name }}
+        run: |
+          core=$(sed -n 's/^UPSTREAM_TAG = "\(.*\)"/\1/p' src/lnurlcashkernel/_upstream.py)
+          commit=$(sed -n 's/^UPSTREAM_COMMIT = "\(.*\)"/\1/p' src/lnurlcashkernel/_upstream.py)
+          gh release create "$tag" --generate-notes \
+            --notes "Bundles Bitcoin Core \`$core\` (\`$commit\`) - the script verification code this release actually runs."
