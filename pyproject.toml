@@ -5,7 +5,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "lnurlcash-kernel"
 dynamic = ["version"]
-description = "Verify LUD-25 ct1 (taproot script-path) spends with Bitcoin Core's own script interpreter, unmodified."
+description = "Verify LUD-25 note (taproot key- and script-path) spends with Bitcoin Core's own script interpreter, unmodified."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

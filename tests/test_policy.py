@@ -1,7 +1,7 @@
 import pytest
 
 from lnurlcashkernel import TimeClaimRejected, check_time_claim
-from lnurlcashkernel.templates import CSV_TYPE_FLAG
+from lnurlcashkernel.policy import CSV_TYPE_FLAG
 
 NOW = 1_800_000_000
 LOCKED = 1_700_000_000

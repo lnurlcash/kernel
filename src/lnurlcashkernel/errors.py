@@ -22,8 +22,8 @@ class SpendRejected(Exception):
 
 
 class UnsupportedScript(SpendRejected):
-    """Not one of the recognised leaf shapes (or a timelock of a kind that has
-    no meaning off-chain, e.g. a block-height lock)."""
+    """The leaf uses a tapscript upgrade hook (an unknown leaf version or an
+    OP_SUCCESSx opcode) that would otherwise succeed unconditionally."""
 
 
 class ScriptInvalid(SpendRejected):

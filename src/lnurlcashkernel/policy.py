@@ -4,7 +4,7 @@ explicit argument.
 Bitcoin splits timelock enforcement in two, and so does this package:
 
  1. the *script* compares its embedded number to the spending transaction's own
-    nLockTime / nSequence  (done by Core, in `verify_script_path`), and
+    nLockTime / nSequence  (done by Core, in `verify_witness`), and
  2. separate consensus code (`CheckFinalTx` / `SequenceLocks`) checks that those
     transaction fields are themselves acceptable *right now* against the chain.
 
@@ -21,12 +21,11 @@ verification path can be proven independent of time.
 from __future__ import annotations
 
 from .errors import TimeClaimRejected
-from .templates import (
-    CSV_GRANULARITY_SECONDS,
-    CSV_TYPE_FLAG,
-    CSV_VALUE_MASK,
-    LOCKTIME_THRESHOLD,
-)
+
+LOCKTIME_THRESHOLD = 500_000_000  # below this an nLockTime is a block height
+CSV_TYPE_FLAG = 1 << 22  # BIP68: relative lock is time-based (512 s units)
+CSV_VALUE_MASK = 0xFFFF
+CSV_GRANULARITY_SECONDS = 512
 
 SEQUENCE_FINAL = 0xFFFFFFFF
 SEQUENCE_DISABLE_FLAG = 1 << 31

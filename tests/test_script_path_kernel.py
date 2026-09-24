@@ -1,6 +1,6 @@
 """A REAL script-path spend, built from scratch and judged by Bitcoin Core.
 
-This is the end-to-end proof the ct1 design rests on: a CLTV timelock leaf,
+This is the end-to-end proof the cp1 design rests on: a CLTV timelock leaf,
 committed under a taproot output key Q, redeemed by revealing the leaf + control
 block + a genuine Schnorr signature over the tapscript sighash - and accepted or
 rejected by libbitcoinkernel, exactly as a mint would use it.
