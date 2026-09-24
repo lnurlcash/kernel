@@ -120,11 +120,13 @@ def tweak_output_key(internal_x: bytes, merkle_root: bytes) -> tuple[bytes, int]
     return q[0].to_bytes(32, "big"), q[1] & 1
 
 
-def single_leaf_tree(internal_x: bytes, script: bytes) -> tuple[bytes, bytes]:
+def single_leaf_tree(
+    internal_x: bytes, script: bytes, version: int = 0xC0
+) -> tuple[bytes, bytes]:
     """A one-leaf taproot tree. Returns (Q, control_block)."""
-    root = tapleaf_hash(script)
+    root = tapleaf_hash(script, version)
     q, parity = tweak_output_key(internal_x, root)
-    return q, bytes([0xC0 | parity]) + internal_x
+    return q, bytes([version | parity]) + internal_x
 
 
 def two_leaf_tree(
