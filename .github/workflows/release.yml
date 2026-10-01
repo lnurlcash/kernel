@@ -69,13 +69,16 @@ jobs:
         with:
           submodules: recursive # the crate bundles vendor/bitcoin's sources
       - uses: dtolnay/rust-toolchain@stable
-      - name: Refuse a crate version that is not the tag
+      - name: Take the crate version from the tag (like the wheel's setuptools_scm)
         run: |
-          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          if [ "v$version" != "${{ github.ref_name }}" ]; then
-            echo "::error::Cargo.toml says $version, the tag is ${{ github.ref_name }}"
+          version="${GITHUB_REF_NAME#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::tag ${GITHUB_REF_NAME} is not vMAJOR.MINOR.PATCH"
             exit 1
           fi
+          sed -i "0,/^version = .*/s//version = \"$version\"/" Cargo.toml
+          sed -i "/^name = \"lnurlcash-kernel\"$/{n;s/^version = .*/version = \"$version\"/}" Cargo.lock
+          test "$(cargo metadata --locked --no-deps --format-version 1 | jq -r '.packages[0].version')" = "$version"
       - name: Fetch Boost headers
         run: scripts/fetch_boost_headers.sh "$RUNNER_TEMP/boost"
       - run: pip install cmake ninja
@@ -92,7 +95,8 @@ jobs:
         if: steps.published.outputs.done != 'true' && env.HAS_REGISTRY_TOKEN != 'true'
       - name: Publish to crates.io (verifies the packaged crate builds first)
         if: steps.published.outputs.done != 'true'
-        run: cargo publish --locked
+        # --allow-dirty: the version stamp above is the only change to the checkout
+        run: cargo publish --locked --allow-dirty
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN || steps.auth.outputs.token }}
           LNURLCASHKERNEL_BOOST_DIR: ${{ runner.temp }}/boost/boost-shim

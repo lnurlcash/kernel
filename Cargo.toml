@@ -1,7 +1,7 @@
 [package]
 name = "lnurlcash-kernel"
-# must equal the release tag: release.yml refuses to publish otherwise
-version = "0.2.0"
+# placeholder: release.yml stamps the version from the git tag at publish time
+version = "0.0.0"
 edition = "2021"
 rust-version = "1.75"
 description = "Verify LUD-25 note spends with Bitcoin Core's own script interpreter (libbitcoinkernel, statically linked, unmodified)"
