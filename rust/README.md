@@ -28,5 +28,5 @@ To skip the build, set `LNURLCASHKERNEL_LIB_DIR` to a directory holding a static
 As a git dependency, cargo checks out the `vendor/bitcoin` submodule itself:
 
 ```toml
-lnurlcash-kernel = { git = "https://github.com/lnurlcash/lnurlcashkernel", tag = "v0.2.0" }
+lnurlcash-kernel = { git = "https://github.com/lnurlcash/kernel", tag = "v0.2.0" }
 ```
