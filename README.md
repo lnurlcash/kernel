@@ -30,6 +30,39 @@ The same verifier ships as the [`lnurlcash-kernel`](rust/README.md) crate. It bu
 let opens = lnurlcash_kernel::verify_key_path(&q, "mint.example", &signature)?;
 ```
 
+### From Nix
+
+The repo is a flake. Its overlay puts the package on every `python3*`
+interpreter (not just the default one), which is the idiomatic shape for a
+NixOS configuration:
+
+```nix
+{
+  inputs.lnurlcash-kernel.url = "github:lnurlcash/kernel/v0.2.2";
+
+  # in a NixOS configuration:
+  nixpkgs.overlays = [ inputs.lnurlcash-kernel.overlays.default ];
+  environment.systemPackages = [
+    (pkgs.python3.withPackages (ps: [ ps.lnurlcash-kernel ]))
+  ];
+}
+```
+
+Two build variants are offered:
+
+- `packages.<system>.lnurlcash-kernel` (the default, and what the overlay
+  provides) repackages the prebuilt manylinux wheel from PyPI - byte-identical
+  to what `pip install lnurlcash-kernel` fetches, pinned by the same sha256
+  PyPI records.
+- `packages.<system>.lnurlcash-kernel-from-source` compiles Core's kernel from
+  the pinned vendored tree (locked as the `bitcoin` flake input) - nothing
+  prebuilt enters the build. Slow the first time, then cached.
+
+`nix flake check` runs the test suite against each installed variant, and CI
+(`.github/workflows/nix.yml`) runs both on every PR, so a packaging-affecting
+change - a version bump without the wheel URL/hash, a nixpkgs lock update -
+fails the build instead of slipping through.
+
 ## What this verifies - and what it does not
 
 **It verifies scripts.** Whether a key-path signature is valid for `Q`, whether
