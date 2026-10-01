@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Move the vendored Bitcoin Core pin to a new release tag.
 
-Updates BOTH the submodule and src/lnurlcashkernel/_upstream.py, because
+Updates the submodule, src/lnurlcashkernel/_upstream.py and rust/lib.rs, because
 tests/test_upstream.py fails if they ever disagree - `upstream_version()` is what
 an operator trusts to know which script verification they are running.
 
@@ -18,6 +18,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CORE = ROOT / "vendor" / "bitcoin"
 UPSTREAM = ROOT / "src" / "lnurlcashkernel" / "_upstream.py"
+RUST_LIB = ROOT / "rust" / "lib.rs"
 
 
 def git(*args: str) -> str:
@@ -31,10 +32,16 @@ def main(tag: str) -> None:
     git("checkout", "-q", tag)
     commit = git("rev-parse", f"{tag}^{{commit}}")
 
-    text = UPSTREAM.read_text()
-    text = re.sub(r'UPSTREAM_TAG = ".*?"', f'UPSTREAM_TAG = "{tag}"', text)
-    text = re.sub(r'UPSTREAM_COMMIT = ".*?"', f'UPSTREAM_COMMIT = "{commit}"', text)
-    UPSTREAM.write_text(text)
+    # the Python package and the Rust crate both report the pin
+    for path in (UPSTREAM, RUST_LIB):
+        text = path.read_text()
+        text = re.sub(r'UPSTREAM_TAG(: &str)? = ".*?"', lambda m: f'UPSTREAM_TAG{m.group(1) or ""} = "{tag}"', text)
+        text = re.sub(
+            r'UPSTREAM_COMMIT(: &str)? = ".*?"',
+            lambda m: f'UPSTREAM_COMMIT{m.group(1) or ""} = "{commit}"',
+            text,
+        )
+        path.write_text(text)
     print(f"pinned Bitcoin Core {tag} ({commit})")
 
 

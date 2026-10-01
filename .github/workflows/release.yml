@@ -8,6 +8,10 @@ on:
 # exchanges GitHub's OIDC token for a PyPI upload (trusted publishing - no API
 # token is stored anywhere), then a GitHub release is created.
 #
+# The Rust crate goes to crates.io from the same tag, the same way: its
+# `crate` job exchanges the OIDC token for a short-lived crates.io token
+# (trusted publishing), so no registry token is stored either.
+#
 # The one difference: electrum-client is pure Python, so one `uv build` on one
 # runner is enough. This package ships Bitcoin Core's native library, so the
 # wheels are built per platform in manylinux containers (a wheel built on a
@@ -51,8 +55,35 @@ jobs:
           name: sdist
           path: dist/*.tar.gz
 
+  crate:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for crates.io trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive # the crate bundles vendor/bitcoin's sources
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Refuse a crate version that is not the tag
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          if [ "v$version" != "${{ github.ref_name }}" ]; then
+            echo "::error::Cargo.toml says $version, the tag is ${{ github.ref_name }}"
+            exit 1
+          fi
+      - name: Fetch Boost headers
+        run: scripts/fetch_boost_headers.sh "$RUNNER_TEMP/boost"
+      - run: pip install cmake ninja
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+      - name: Publish to crates.io (verifies the packaged crate builds first)
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+          LNURLCASHKERNEL_BOOST_DIR: ${{ runner.temp }}/boost/boost-shim
+
   publish:
-    needs: [wheels, sdist]
+    needs: [wheels, sdist, crate]
     runs-on: ubuntu-latest
     permissions:
       id-token: write # required for PyPI trusted publishing (OIDC)

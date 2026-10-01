@@ -22,6 +22,14 @@ tpl = k.verify_spend(
 )                            # returns None, or raises SpendRejected
 ```
 
+### From Rust
+
+The same verifier ships as the [`lnurlcash-kernel`](rust/README.md) crate. It builds Core's kernel from `vendor/bitcoin` and links it statically, so a Rust binary carries the verifier inside it. Decoding and time claims come from [`lnurlcash-core`](https://github.com/lnurlcash/lnurlcash-core).
+
+```rust
+let opens = lnurlcash_kernel::verify_key_path(&q, "mint.example", &signature)?;
+```
+
 ## What this verifies - and what it does not
 
 **It verifies scripts.** Whether a key-path signature is valid for `Q`, whether
