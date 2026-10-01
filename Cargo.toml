@@ -1,0 +1,61 @@
+[package]
+name = "lnurlcash-kernel"
+# must equal the release tag: release.yml refuses to publish otherwise
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Verify LUD-25 note spends with Bitcoin Core's own script interpreter (libbitcoinkernel, statically linked, unmodified)"
+license = "MIT"
+repository = "https://github.com/lnurlcash/lnurlcashkernel"
+readme = "rust/README.md"
+keywords = ["lnurl", "lnurlcash", "bitcoin", "taproot", "libbitcoinkernel"]
+categories = ["cryptography::cryptocurrencies", "api-bindings"]
+build = "rust/build.rs"
+links = "bitcoinkernel"
+# only what building libbitcoinkernel from source needs: Core's build files,
+# the kernel's sources and their in-tree dependencies. Core's own BIP-341
+# vectors ride along for the tests.
+include = [
+    "/Cargo.toml",
+    "/rust/**",
+    "/scripts/fetch_boost_headers.sh",
+    "/vendor/bitcoin/CMakeLists.txt",
+    "/vendor/bitcoin/CMakePresets.json",
+    "/vendor/bitcoin/COPYING",
+    "/vendor/bitcoin/libbitcoinkernel.pc.in",
+    "/vendor/bitcoin/cmake/**",
+    "/vendor/bitcoin/src/**",
+    "!/vendor/bitcoin/src/qt/**",
+    "!/vendor/bitcoin/src/test/**",
+    "/vendor/bitcoin/src/test/CMakeLists.txt",
+    "/vendor/bitcoin/src/test/util/**",
+    # configured by Core's top-level CMake even for a kernel-only build
+    "/vendor/bitcoin/contrib/filter-lcov.py",
+    "/vendor/bitcoin/contrib/devtools/split-debug.sh.in",
+    "/vendor/bitcoin/test/CMakeLists.txt",
+    "/vendor/bitcoin/test/config.ini.in",
+    "/vendor/bitcoin/doc/CMakeLists.txt",
+    "/vendor/bitcoin/doc/Doxyfile.in",
+    "/vendor/bitcoin/src/test/data/bip341_wallet_vectors.json",
+    "!/vendor/bitcoin/src/bench/**",
+    "!/vendor/bitcoin/src/wallet/**",
+    "!/vendor/bitcoin/src/ipc/**",
+    "!/vendor/bitcoin/src/secp256k1/src/wycheproof/**",
+    "!/vendor/bitcoin/src/leveldb/doc/**",
+    "!/vendor/bitcoin/src/leveldb/benchmarks/**",
+    "!/vendor/bitcoin/src/univalue/test/**",
+]
+
+[lib]
+name = "lnurlcash_kernel"
+path = "rust/lib.rs"
+
+[dependencies]
+sha2 = "0.10"
+
+[build-dependencies]
+cmake = "0.1.50"
+
+[dev-dependencies]
+serde_json = "1"
+hex = "0.4"

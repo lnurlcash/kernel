@@ -27,3 +27,22 @@ jobs:
         # would otherwise shadow the installed wheel with a source tree that has
         # no built library
         run: pytest tests -q -o pythonpath=tests
+
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Fetch Boost headers (same script and version the release build uses)
+        run: scripts/fetch_boost_headers.sh "$RUNNER_TEMP/boost"
+      - run: pip install cmake ninja
+      - name: Test the crate (builds Core's kernel statically)
+        run: cargo test --locked
+        env:
+          LNURLCASHKERNEL_BOOST_DIR: ${{ runner.temp }}/boost/boost-shim
+      - name: Package it the way crates.io will build it
+        run: cargo package --locked
+        env:
+          LNURLCASHKERNEL_BOOST_DIR: ${{ runner.temp }}/boost/boost-shim

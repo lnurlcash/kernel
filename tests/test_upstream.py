@@ -1,3 +1,4 @@
+import re
 import subprocess
 from pathlib import Path
 
@@ -26,3 +27,9 @@ def test_pinned_upstream_matches_the_vendored_submodule():
 
 def test_upstream_version_is_human_readable():
     assert upstream_version() == f"{UPSTREAM_TAG} ({UPSTREAM_COMMIT[:7]})"
+
+
+def test_the_rust_crate_reports_the_same_pin():
+    rust = (ROOT / "rust" / "lib.rs").read_text()
+    assert re.search(r'UPSTREAM_TAG: &str = "(.*?)"', rust).group(1) == UPSTREAM_TAG
+    assert re.search(r'UPSTREAM_COMMIT: &str = "(.*?)"', rust).group(1) == UPSTREAM_COMMIT

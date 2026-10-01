@@ -6,3 +6,6 @@ __pycache__/
 .pytest_cache/
 # the compiled library is a build product, never committed
 src/lnurlcashkernel/_lib/
+
+# the Rust crate
+/target/
